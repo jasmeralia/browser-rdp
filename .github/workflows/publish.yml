@@ -1,0 +1,54 @@
+name: Publish to GHCR (latest)
+
+on:
+  push:
+    branches: ["master"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute image name (lowercase)
+        id: prep
+        run: |
+          OWNER_LOWER=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          REPO_LOWER=$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')
+          echo "owner_lower=${OWNER_LOWER}" >> $GITHUB_OUTPUT
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+          echo "image=${{ env.REGISTRY }}/${OWNER_LOWER}/${REPO_LOWER}" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.prep.outputs.image }}:latest
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Show pushed image
+        run: echo "Pushed ${{ steps.prep.outputs.image }}:latest"
+
+      - name: Export compose template with image placeholders filled
+        run: |
+          sed -e "s#\${OWNER_LOWER}#${{ steps.prep.outputs.owner_lower }}#g"               -e "s#\${REPO_LOWER}#${{ steps.prep.outputs.repo_lower }}#g"               docker-compose.yml > docker-compose.rendered.yml
+          echo "Rendered docker-compose.rendered.yml"
+          cat docker-compose.rendered.yml

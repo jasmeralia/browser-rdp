@@ -1,0 +1,26 @@
+# docker-compose.yml
+services:
+  xfce-xrdp:
+    image: ghcr.io/${OWNER_LOWER}/${REPO_LOWER}:latest
+    container_name: xfce-xrdp
+    ports:
+      - "3389:3389"
+    environment:
+      PASSWORD: "change-me"
+      USER_NAME: "user"
+      USER_ID: "1000"
+      GROUP_ID: "1000"
+    shm_size: "2g"
+    volumes:
+      - downloads:/home/user/Downloads
+      - mozilla:/home/user/.mozilla
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "nc -z 127.0.0.1 3389"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  downloads:
+  mozilla:
