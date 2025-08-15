@@ -36,6 +36,12 @@ RUN install -d /usr/share/keyrings && \
     apt-get update && apt-get install -y --no-install-recommends google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
+# Create Chrome desktop shortcut with --no-sandbox and --disable-gpu flags
+# hadolint ignore=SC2015
+RUN install -d /usr/share/applications && \
+    sed 's|Exec=/usr/bin/google-chrome-stable|Exec=/usr/bin/google-chrome-stable --no-sandbox --disable-gpu|g' \
+      /usr/share/applications/google-chrome.desktop > /usr/share/applications/google-chrome-nosandbox.desktop || true
+
 # --- Opera (stable) ---
 # hadolint ignore=DL3008,DL4001,DL4006
 RUN install -d /usr/share/keyrings && \
@@ -45,12 +51,21 @@ RUN install -d /usr/share/keyrings && \
     apt-get update && apt-get install -y --no-install-recommends opera-stable && \
     rm -rf /var/lib/apt/lists/*
 
+# Create Opera desktop shortcut with --no-sandbox and --disable-gpu flags
+# hadolint ignore=SC2015
+RUN install -d /usr/share/applications && \
+    sed 's|Exec=/usr/bin/opera-stable|Exec=/usr/bin/opera-stable --no-sandbox --disable-gpu|g' \
+      /usr/share/applications/opera.desktop > /usr/share/applications/opera-nosandbox.desktop || true
+
 # Default to XFCE for xrdp sessions for any new user
 RUN echo "startxfce4" > /etc/skel/.xsession
 
 # XRDP tweaks
 # hadolint ignore=DL3059
 RUN install -d -m 0755 /var/run/xrdp
+
+# Ensure /dev/shm exists and is writable for Chromium browsers
+RUN mkdir -p /dev/shm && chmod 1777 /dev/shm
 
 # --- Preconfigure LastPass extension for all supported browsers ---
 # Chrome/Opera: force-install via enterprise policy (Chrome Web Store)
