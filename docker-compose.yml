@@ -1,26 +1,27 @@
 # docker-compose.yml
+---
 services:
-  xfce-xrdp:
+  browser-rdp:
     image: ghcr.io/${OWNER_LOWER}/${REPO_LOWER}:latest
-    container_name: xfce-xrdp
+    pull_policy: always
+    container_name: browser-rdp
     ports:
       - "3389:3389"
     environment:
       PASSWORD: "change-me"
       USER_NAME: "user"
-      USER_ID: "1000"
-      GROUP_ID: "1000"
+      USER_ID: "1000"   # Use a number > 1000
+      GROUP_ID: "1000"  # Use a number > 1000
     shm_size: "2g"
+    # Host-mounted persistence for each browser profile and Downloads
     volumes:
-      - downloads:/home/user/Downloads
-      - mozilla:/home/user/.mozilla
+      - /mnt/myzmirror/rdp-downloads/Downloads:/home/${USER_NAME}/Downloads
+      - /mnt/myzmirror/rdp-downloads/mozilla:/home/${USER_NAME}/.mozilla
+      - /mnt/myzmirror/rdp-downloads/google-chrome:/home/${USER_NAME}/.config/google-chrome
+      - /mnt/myzmirror/rdp-downloads/opera:/home/${USER_NAME}/.config/opera
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-lc", "nc -z 127.0.0.1 3389"]
       interval: 10s
       timeout: 3s
       retries: 10
-
-volumes:
-  downloads:
-  mozilla:

@@ -16,15 +16,21 @@ if ! id -u "${USER_NAME}" >/dev/null 2>&1; then
   usermod -aG sudo "${USER_NAME}" || true
 fi
 
-# Ensure home and default XFCE session file exist
 HOME_DIR="$(getent passwd "${USER_NAME}" | cut -d: -f6)"
-mkdir -p "${HOME_DIR}/Downloads"
+# Ensure expected directories exist (in case host mounts are empty)
+mkdir -p "${HOME_DIR}/Downloads" \
+         "${HOME_DIR}/.mozilla" \
+         "${HOME_DIR}/.config/google-chrome" \
+         "${HOME_DIR}/.config/opera"
+
+# Default XFCE session
 if [ ! -f "${HOME_DIR}/.xsession" ]; then
   echo "startxfce4" > "${HOME_DIR}/.xsession"
 fi
+
 chown -R "${USER_NAME}:${USER_NAME}" "${HOME_DIR}"
 
-# Set password
+# Set password for XRDP login
 echo "${USER_NAME}:${PASSWORD}" | chpasswd
 
 exec "$@"
