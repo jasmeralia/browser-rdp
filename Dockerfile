@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # Update all packages
+# hadolint ignore=DL3005
 RUN apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y \
   && rm -rf /var/lib/apt/lists/*
 
