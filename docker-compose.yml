@@ -13,12 +13,14 @@ services:
       USER_ID: "1000"   # Use a number > 1000
       GROUP_ID: "1000"  # Use a number > 1000
     shm_size: "2g"
-    # Host-mounted persistence for each browser profile and Downloads
+    # Host-mounted persistence for each browser profile, Downloads, and xrdp cert and key
     volumes:
       - /mnt/myzmirror/rdp-downloads/Downloads:/home/${USER_NAME}/Downloads
       - /mnt/myzmirror/rdp-downloads/mozilla:/home/${USER_NAME}/.mozilla
       - /mnt/myzmirror/rdp-downloads/google-chrome:/home/${USER_NAME}/.config/google-chrome
       - /mnt/myzmirror/rdp-downloads/opera:/home/${USER_NAME}/.config/opera
+      - /mnt/rdp-downloads/xrdp-certs/cert.pem:/etc/xrdp/cert.pem:ro
+      - /mnt/rdp-downloads/xrdp-certs/key.pem:/etc/xrdp/key.pem:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-lc", "nc -z 127.0.0.1 3389"]
