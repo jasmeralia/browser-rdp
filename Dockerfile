@@ -1,4 +1,4 @@
-# Dockerfile: Ubuntu 24.04 + XFCE + XRDP + Firefox/Chrome/Opera + LastPass preinstalled
+# Dockerfile: Ubuntu 24.04 + XFCE + XRDP + Firefox/Chrome + LastPass + uBlock Origin
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -36,58 +36,58 @@ RUN install -d /usr/share/keyrings && \
     apt-get update && apt-get install -y --no-install-recommends google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
-# Create Chrome desktop shortcut with --no-sandbox and --disable-gpu flags
+# Create Chrome desktop shortcut with sandbox, GPU, and performance flags
 # hadolint ignore=SC2015
 RUN install -d /usr/share/applications && \
-    sed 's|Exec=/usr/bin/google-chrome-stable|Exec=/usr/bin/google-chrome-stable --no-sandbox --disable-gpu|g' \
+    sed 's|Exec=/usr/bin/google-chrome-stable|Exec=/usr/bin/google-chrome-stable --no-sandbox --disable-gpu --disable-smooth-scrolling --disable-gpu-compositing --autoplay-policy=user-gesture-required|g' \
       /usr/share/applications/google-chrome.desktop > /usr/share/applications/google-chrome-nosandbox.desktop || true
 
-# --- Opera (stable) ---
-# hadolint ignore=DL3008,DL4001,DL4006
-RUN install -d /usr/share/keyrings && \
-    wget -qO- https://deb.opera.com/archive.key | gpg --dearmor -o /usr/share/keyrings/opera.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/opera.gpg] https://deb.opera.com/opera-stable/ stable non-free" \
-      > /etc/apt/sources.list.d/opera-stable.list && \
-    apt-get update && apt-get install -y --no-install-recommends opera-stable && \
-    rm -rf /var/lib/apt/lists/*
+# --- Firefox autoconfig: system-wide performance defaults ---
+COPY autoconfig.js /usr/lib/firefox/defaults/pref/autoconfig.js
+COPY mozilla.cfg /usr/lib/firefox/mozilla.cfg
 
-# Create Opera desktop shortcut with --no-sandbox and --disable-gpu flags
-# hadolint ignore=SC2015
-RUN install -d /usr/share/applications && \
-    sed 's|Exec=/usr/bin/opera-stable|Exec=/usr/bin/opera-stable --no-sandbox --disable-gpu|g' \
-      /usr/share/applications/opera.desktop > /usr/share/applications/opera-nosandbox.desktop || true
+# --- XFCE desktop defaults: no compositor, Adwaita theme ---
+COPY xfce4-defaults/ /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/
 
 # Default to XFCE for xrdp sessions for any new user
 RUN echo "startxfce4" > /etc/skel/.xsession
 
-# XRDP tweaks
+# XRDP tweaks: enable caching, compression, fastpath, and limit colour depth
 # hadolint ignore=DL3059
-RUN install -d -m 0755 /var/run/xrdp
+RUN install -d -m 0755 /var/run/xrdp && \
+    sed -i \
+      -e 's/^bitmap_cache=.*/bitmap_cache=yes/' \
+      -e 's/^bitmap_compression=.*/bitmap_compression=yes/' \
+      -e 's/^bulk_compression=.*/bulk_compression=yes/' \
+      -e 's/^use_fastpath=.*/use_fastpath=both/' \
+      -e 's/^max_bpp=.*/max_bpp=16/' \
+      /etc/xrdp/xrdp.ini
 
 # Ensure /dev/shm exists and is writable for Chromium browsers
 RUN mkdir -p /dev/shm && chmod 1777 /dev/shm
 
-# --- Preconfigure LastPass extension for all supported browsers ---
-# Chrome/Opera: force-install via enterprise policy (Chrome Web Store)
-# LastPass Chrome extension ID: hdokiejnpimakedhajhdlcegeplioahd
-RUN mkdir -p /etc/opt/chrome/policies/managed /etc/opt/opera/policies/managed && \
+# --- Preconfigure LastPass + uBlock Origin for all supported browsers ---
+# Chrome: force-install via enterprise policy (Chrome Web Store)
+# LastPass: hdokiejnpimakedhajhdlcegeplioahd
+# uBlock Origin: cjpalhdlnbpafiamejdnhcphjbkeiagm
+RUN mkdir -p /etc/opt/chrome/policies/managed && \
     printf '%s\n' \
     '{' \
     '  "ExtensionInstallForcelist": [' \
-    '    "hdokiejnpimakedhajhdlcegeplioahd;https://clients2.google.com/service/update2/crx"' \
+    '    "hdokiejnpimakedhajhdlcegeplioahd;https://clients2.google.com/service/update2/crx",' \
+    '    "cjpalhdlnbpafiamejdnhcphjbkeiagm;https://clients2.google.com/service/update2/crx"' \
     '  ]' \
-    '}' > /etc/opt/chrome/policies/managed/extensions.json && \
-    cp /etc/opt/chrome/policies/managed/extensions.json /etc/opt/opera/policies/managed/extensions.json
+    '}' > /etc/opt/chrome/policies/managed/extensions.json
 
-# Firefox: install via enterprise policies from AMO latest URL
-# AMO slug: lastpass-password-manager
+# Firefox: install extensions via enterprise policies from AMO
 RUN mkdir -p /usr/lib/firefox/distribution && \
     printf '%s\n' \
     '{' \
     '  "policies": {' \
     '    "Extensions": {' \
     '      "Install": [' \
-    '        "https://addons.mozilla.org/firefox/downloads/latest/lastpass-password-manager/latest.xpi"' \
+    '        "https://addons.mozilla.org/firefox/downloads/latest/lastpass-password-manager/latest.xpi",' \
+    '        "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"' \
     '      ]' \
     '    }' \
     '  }' \
