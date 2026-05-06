@@ -1,5 +1,5 @@
 # Dockerfile: Ubuntu 24.04 + XFCE + XRDP + Firefox/Chrome + LastPass + uBlock Origin
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
