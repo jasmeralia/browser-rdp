@@ -1,7 +1,9 @@
 version: 2
 updates:
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    auto-merge: enable
+- package-ecosystem: docker
+  directory: /
+  schedule:
+    interval: weekly
+  auto-merge: enable
+  reviewers:
+  - jasmeralia
