@@ -68,6 +68,23 @@ Then update your `docker-compose.yml` to use the single mount.
 2. **Connect via RDP:** Use any RDP client to connect to `localhost:3389`.
 3. **Credentials:** Set `PASSWORD`, `USER_NAME`, `USER_ID`, and `GROUP_ID` in `docker-compose.yml`.
 
+### Password via file (`PASSWORD_FILE`)
+
+Instead of passing the RDP password as a plaintext `PASSWORD` environment variable, you can point `PASSWORD_FILE` at a file whose contents are the password (trailing newline is stripped):
+
+```yaml
+environment:
+  - PASSWORD_FILE=/run/secrets/rdp-password
+volumes:
+  - /path/to/secret-file:/run/secrets/rdp-password:ro
+```
+
+Notes:
+
+- If both are set, `PASSWORD_FILE` takes precedence over `PASSWORD`.
+- If `PASSWORD_FILE` is set but the file is missing or unreadable, the container exits with a clear error at startup.
+- The entrypoint runs as root, so a `root:root` mode `600` host file works fine as the mount source.
+
 ## File Overview
 
 - [`Dockerfile`](Dockerfile): Builds the desktop environment and installs browsers/extensions.

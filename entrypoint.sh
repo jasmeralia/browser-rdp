@@ -4,7 +4,15 @@ set -euo pipefail
 : "${USER_NAME:=user}"
 : "${USER_ID:=1000}"
 : "${GROUP_ID:=1000}"
-: "${PASSWORD:?ERROR: PASSWORD env var must be set}"
+# Prefer PASSWORD_FILE (path to a file containing the password) over PASSWORD
+if [ -n "${PASSWORD_FILE:-}" ]; then
+  if [ ! -r "${PASSWORD_FILE}" ]; then
+    echo "ERROR: PASSWORD_FILE is set to '${PASSWORD_FILE}' but it is missing or unreadable" >&2
+    exit 1
+  fi
+  PASSWORD="$(< "${PASSWORD_FILE}")"
+fi
+: "${PASSWORD:?ERROR: PASSWORD or PASSWORD_FILE env var must be set}"
 
 # Create group/user if missing
 if ! getent group "${USER_NAME}" >/dev/null 2>&1; then
