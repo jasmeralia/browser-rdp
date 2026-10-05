@@ -1,6 +1,6 @@
 # Browser RDP Desktop
 
-A containerized Ubuntu 24.04 desktop with XFCE, XRDP, and preinstalled browsers (Firefox, Chrome) plus LastPass and uBlock Origin extensions, optimized for responsive remote access.
+A containerized Ubuntu 26.04 desktop with XFCE, XRDP, and preinstalled browsers (Firefox, Chrome) plus LastPass and uBlock Origin extensions, optimized for responsive remote access.
 
 ## Features
 
@@ -38,7 +38,7 @@ volumes:
 On container start the entrypoint uses "create only if missing" logic:
 
 - **Fresh (empty) mount:** Creates `Downloads`, `.mozilla`, `.config/google-chrome`, `.xsession`, and seeds XFCE defaults (compositor off, etc.)
-- **Existing mount:** All directories and configs are left untouched — nothing is overwritten
+- **Existing mount:** Existing profile contents and settings are preserved. The entrypoint creates missing expected directories and normalizes ownership on the home directory and selected profile paths; it does not overwrite existing session or XFCE settings.
 
 To reset XFCE defaults after customizing, delete the xfconf directory and restart the container:
 ```sh
